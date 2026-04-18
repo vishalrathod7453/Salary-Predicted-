@@ -1,74 +1,55 @@
 import streamlit as st
-import joblib
 import numpy as np
-import pandas as pd
-import time
+import pickle
+from streamlit_lottie import st_lottie
+import requests
 
-# --- PAGE CONFIG ---
-st.set_page_config(page_title="Salary Predictor Pro", page_icon="💰", layout="centered")
+# ------------------- PAGE CONFIG -------------------
+st.set_page_config(page_title="Salary Predictor", page_icon="💼", layout="centered")
 
-# --- CUSTOM CSS FOR ANIMATIONS ---
+# ------------------- LOAD MODEL -------------------
+model = pickle.load(open("ModelSL.pkl", "rb"))
+
+# ------------------- LOAD LOTTIE ANIMATION -------------------
+def load_lottieurl(url):
+    r = requests.get(url)
+    if r.status_code != 200:
+        return None
+    return r.json()
+
+lottie_animation = load_lottieurl("https://assets2.lottiefiles.com/packages/lf20_touohxv0.json")
+
+# ------------------- CUSTOM CSS -------------------
 st.markdown("""
     <style>
-    /* Fade in animation */
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
+    .main {
+        background: linear-gradient(to right, #667eea, #764ba2);
+        color: white;
     }
-    .main-container {
-        animation: fadeIn 1.5s ease-out;
-    }
-    /* Stylish metric card */
-    .metric-card {
-        background: rgba(255, 255, 255, 0.1);
-        padding: 20px;
-        border-radius: 15px;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        backdrop-filter: blur(10px);
-        text-align: center;
+    .stButton>button {
+        background-color: #ff4b4b;
+        color: white;
+        border-radius: 10px;
+        height: 3em;
+        width: 100%;
+        font-size: 18px;
     }
     </style>
-    """, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
-# --- LOAD MODEL ---
-@st.cache_resource
-def load_model():
-    # Load your model file
-    return joblib.load("modelSL.pkl")
+# ------------------- TITLE -------------------
+st.title("💼 Salary Prediction App")
+st.write("### Predict salary using Machine Learning")
 
-model = load_model()
+# ------------------- ANIMATION -------------------
+st_lottie(lottie_animation, height=250)
 
-# --- HEADER ---
-st.title("🚀 Salary Predictor AI")
-st.markdown("Predict your potential earnings based on years of experience using our **K-Nearest Neighbors** engine.")
-st.divider()
+# ------------------- INPUT -------------------
+experience = st.slider("📊 Years of Experience", 0, 20, 1)
 
-# --- INPUT SECTION ---
-with st.container():
-    st.subheader("📊 Enter Details")
-    # Slider with a bit of "bouncing" feel in Streamlit
-    experience = st.slider("Years of Experience", 0.0, 40.0, 5.0, step=0.5)
+# ------------------- PREDICTION -------------------
+if st.button("🔮 Predict Salary"):
+    input_data = np.array([[experience]])
+    prediction = model.predict(input_data)
 
-# --- PREDICTION LOGIC ---
-if st.button("Calculate Salary ✨"):
-    with st.spinner('AI is crunching the numbers...'):
-        time.sleep(1) # Simulated delay for "animation" feel
-        
-        # Prepare input as DataFrame to match feature names in the model
-        input_data = pd.DataFrame([[experience]], columns=['YearsExperience'])
-        prediction = model.predict(input_data)[0]
-        
-        # Display Result with Animation
-        st.balloons()
-        st.markdown(f"""
-            <div class="metric-card main-container">
-                <h2 style='color: #4CAF50;'>Estimated Annual Salary</h2>
-                <h1 style='font-size: 3rem;'>${prediction:,.2f}</h1>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        st.success("Prediction complete!")
-
-# --- FOOTER ---
-st.sidebar.info("Model Info: KNeighborsRegressor (v1.6.1)")
-st.sidebar.markdown("Built with ❤️ using Streamlit")
+    st.success(f"💰 Estimated Salary: ₹ {prediction[0]:,.2f}")
