@@ -1,81 +1,54 @@
 import streamlit as st
+import joblib
 import numpy as np
-import pickle
-import os
 import requests
 from streamlit_lottie import st_lottie
 
-# ---------------- PAGE CONFIG ----------------
-st.set_page_config(
-    page_title="💼 Salary Predictor",
-    page_icon="💰",
-    layout="centered"
-)
+# --- Page Config ---
+st.set_page_config(page_title="Salary Predictor", page_icon="🚀", layout="centered")
 
-# ---------------- LOAD LOTTIE ----------------
-def load_lottie(url):
-    try:
-        r = requests.get(url)
-        if r.status_code == 200:
-            return r.json()
-    except:
+# --- Helper: Load Lottie Animation ---
+def load_lottieurl(url: str):
+    r = requests.get(url)
+    if r.status_code != 200:
         return None
+    return r.json()
 
-lottie = load_lottie("https://assets2.lottiefiles.com/packages/lf20_touohxv0.json")
+# --- Load Model ---
+@st.cache_resource
+def load_model():
+    return joblib.load('ModelSL.pkl')
 
-# ---------------- CUSTOM CSS ----------------
+model = load_model()
+
+# --- UI Styling ---
 st.markdown("""
-<style>
-.stApp {
-    background: linear-gradient(to right, #667eea, #764ba2);
-    color: white;
-}
-h1, h2, h3 {
-    text-align: center;
-}
-.stButton>button {
-    background: linear-gradient(to right, #ff416c, #ff4b2b);
-    color: white;
-    border-radius: 12px;
-    height: 3em;
-    width: 100%;
-    font-size: 18px;
-    border: none;
-}
-.stSlider label {
-    font-size: 18px;
-}
-</style>
-""", unsafe_allow_html=True)
+    <style>
+    .main {background-color: #f5f5f5;}
+    .stButton>button {width: 100%; border-radius: 5px; height: 3em; background-color: #FF4B4B; color: white;}
+    </style>
+    """, unsafe_allow_html=True)
 
-# ---------------- TITLE ----------------
-st.markdown("## 💼 Salary Prediction App")
-st.markdown("### Predict salary based on experience")
+# --- Header & Animation ---
+st.title("💰 Salary Predictor Pro")
+st.write("Enter your years of experience to see your predicted salary!")
 
-# ---------------- ANIMATION ----------------
-if lottie:
-    st_lottie(lottie, height=220)
+lottie_url = "https://assets9.lottiefiles.com/packages/lf20_t2qe2a1t.json" # Example animation
+lottie_json = load_lottieurl(lottie_url)
+if lottie_json:
+    st_lottie(lottie_json, height=200, key="coding")
 
-# ---------------- LOAD MODEL ----------------
-model_path = "ModelSL.pkl"
+# --- User Input ---
+years = st.number_input("Years of Experience", min_value=0.0, max_value=50.0, step=0.5)
 
-if not os.path.exists(model_path):
-    st.error("❌ Model file not found! Upload ModelSL.pkl in same folder.")
-    st.stop()
+# --- Prediction Logic ---
+if st.button("Predict Salary"):
+    # The model expects a 2D array: [[years]]
+    features = np.array([[years]])
+    prediction = model.predict(features)
+    
+    st.success(f"Predicted Salary: ${prediction[0]:,.2f}")
 
-try:
-    model = pickle.load(open(modelSL_path, "rb"))
-except Exception as e:
-    st.error("❌ Model loading failed!")
-    st.stop()
-
-# ---------------- INPUT ----------------
-experience = st.slider("📊 Years of Experience", 0, 20, 1)
-
-# ---------------- PREDICTION ----------------
-if st.button("🔮 Predict Salary"):
-    try:
-        prediction = model.predict(np.array([[experience]]))
-        st.success(f"💰 Estimated Salary: ₹ {prediction[0]:,.2f}")
-    except:
-        st.error("❌ Input shape mismatch! Model may expect different features.")
+# --- Footer ---
+st.markdown("---")
+st.caption("Built with Streamlit & Scikit-Learn")
