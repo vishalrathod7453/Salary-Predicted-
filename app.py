@@ -64,7 +64,7 @@ if not os.path.exists(model_path):
     st.stop()
 
 try:
-    model = pickle.load(open(model_path, "rb"))
+    model = pickle.load(open(modelSL_path, "rb"))
 except Exception as e:
     st.error("❌ Model loading failed!")
     st.stop()
